@@ -11,11 +11,22 @@ and average downloads per day as values:
 ```js
 const counts = require('download-counts')
 
+// get average daily downloads for a package
 counts.express
 // 218212
 
-counts.nonexistent_package
-// null
+// top ten packages
+Object.keys(counts).slice(0, 5)
+// [ 'glob',
+//   'readable-stream',
+//   'async',
+//   'lodash',
+//   'minimatch',
+//   'minimist',
+//   'source-map',
+//   'qs',
+//   'inherits',
+//   'isarray' ]
 ```
 
 Note: Scoped packages (e.g. `@foo/bar`) are not included, as npm does
