@@ -25,7 +25,7 @@ function getDownloads (pkg) {
       counts.push({name: pkg.name, average: average})
 
       // shortcut for debugging:
-      if (Object.keys(counts).length > 100) return finish()
+      // if (Object.keys(counts).length > 100) return finish()
     })
     .catch(error => {
       console.error('Error!')
