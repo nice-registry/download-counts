@@ -1,16 +1,19 @@
 # download-counts
 
-> Average daily download counts for every npm package. Works offline.
+> Average daily download counts for every npm package.
 
-This package collects download counts from npm's
-[download-counts](https://github.com/npm/download-counts) web service.
-For each package, **one year's worth** of downloads are fetched,
-then averaged. The result is an object with package names as keys
-and average downloads per day as values.
+This package:
 
-This package is updated once a day using a Heroku bot. See
+- collects download counts from npm's [download-counts](https://github.com/npm/download-counts) web service.
+- collects one year's worth of download data for each package.
+- is a key-value object. Keys are package names, values are average daily downloads.
+- works offline. It's just an offline dataset, and doesn't make any network requests.
+- weighs about 8 MB.
+- is updated every day using a Heroku bot. See
 [script/release.sh](https://github.com/zeke/download-counts/blob/master/script/release.sh) and
 [zeke.sikelianos.com/npm-and-github-automation-with-heroku/](http://zeke.sikelianos.com/npm-and-github-automation-with-heroku/) for info on how that works.
+- does not include scoped packages (e.g. `@foo/bar`), as npm does
+[not provide them](https://github.com/npm/registry/issues/59).
 
 ```js
 const counts = require('download-counts')
@@ -19,8 +22,8 @@ const counts = require('download-counts')
 counts.express
 // 218212
 
-// top ten packages
-Object.keys(counts).slice(0, 5)
+// top ten most downloaded packages
+Object.keys(counts).slice(0, 10)
 // [ 'glob',
 //   'readable-stream',
 //   'async',
@@ -32,9 +35,6 @@ Object.keys(counts).slice(0, 5)
 //   'inherits',
 //   'isarray' ]
 ```
-
-Note: Scoped packages (e.g. `@foo/bar`) are not included, as npm does
-not provide download counts for those.
 
 ## Installation
 
