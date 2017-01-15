@@ -18,6 +18,7 @@ function getDownloads (pkg) {
     .then(result => {
       const downloads = result.body.downloads
       if (!downloads) return
+      console.error(result.body.package)
       const total = lodash.map(downloads, 'downloads').reduce((a, b) => a + b, 0)
       const days = downloads.length
       const average = Math.floor(total / days)
