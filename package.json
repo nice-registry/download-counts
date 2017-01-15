@@ -5,7 +5,7 @@
   "main": "index.json",
   "scripts": {
     "build": "node script/build.js > index.json",
-    "release": "script/release",
+    "release": "./script/release.sh",
     "test": "mocha && standard && standard-markdown"
   },
   "repository": "https://github.com/zeke/download-counts",
