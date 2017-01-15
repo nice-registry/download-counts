@@ -4,7 +4,8 @@
   "description": "Average daily download counts for every npm package. Works offline.",
   "main": "index.json",
   "scripts": {
-    "build": "node build.js > index.json",
+    "build": "node script/build.js > index.json",
+    "release": "script/release",
     "test": "mocha && standard && standard-markdown"
   },
   "repository": "https://github.com/zeke/download-counts",
