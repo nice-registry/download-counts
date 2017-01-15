@@ -2,6 +2,7 @@ const registry = require('package-stream')()
 const got = require('got')
 const humanInterval = require('human-interval')
 const lodash = require('lodash')
+const isNumber = require('is-number')
 const startDate = new Date(new Date() - humanInterval('1 year')).toISOString().substr(0, 10)
 const endDate = new Date().toISOString().substr(0, 10)
 const counts = []
@@ -18,11 +19,14 @@ function getDownloads (pkg) {
     .then(result => {
       const downloads = result.body.downloads
       if (!downloads) return
-      console.error(result.body.package)
+      const name = result.body.package
+      if (isNumber(name)) return
+
+      console.error(name)
       const total = lodash.map(downloads, 'downloads').reduce((a, b) => a + b, 0)
       const days = downloads.length
       const average = Math.floor(total / days)
-      counts.push({name: pkg.name, average: average})
+      counts.push({name: name, average: average})
 
       // shortcut for debugging:
       // if (Object.keys(counts).length > 100) return finish()

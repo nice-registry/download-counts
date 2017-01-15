@@ -12,7 +12,7 @@ and average downloads per day as values:
 const counts = require('download-counts')
 
 counts.express
-// 400000
+// 218212
 
 counts.nonexistent_package
 // null
