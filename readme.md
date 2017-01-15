@@ -7,13 +7,21 @@ This package:
 - collects download counts from npm's [download-counts](https://github.com/npm/download-counts) web service.
 - collects one year's worth of download data for each package.
 - is a key-value object. Keys are package names, values are average daily downloads.
-- works offline. It's just an offline dataset, and doesn't make any network requests.
+- works offline. It's just a big JSON object.
 - weighs about 8 MB.
 - is updated every day using a Heroku bot. See
 [script/release.sh](https://github.com/zeke/download-counts/blob/master/script/release.sh) and
 [zeke.sikelianos.com/npm-and-github-automation-with-heroku/](http://zeke.sikelianos.com/npm-and-github-automation-with-heroku/) for info on how that works.
 - does not include scoped packages (e.g. `@foo/bar`), as npm does
 [not provide them](https://github.com/npm/registry/issues/59).
+
+## Installation
+
+```sh
+yarn add download-counts
+```
+
+## Usage
 
 ```js
 const counts = require('download-counts')
@@ -34,12 +42,6 @@ Object.keys(counts).slice(0, 10)
 //   'qs',
 //   'inherits',
 //   'isarray' ]
-```
-
-## Installation
-
-```sh
-yarn add download-counts
 ```
 
 ## Tests
