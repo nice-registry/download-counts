@@ -6,7 +6,11 @@ This package collects download counts from npm's
 [download-counts](https://github.com/npm/download-counts) web service.
 For each package, **one year's worth** of downloads are fetched,
 then averaged. The result is an object with package names as keys
-and average downloads per day as values:
+and average downloads per day as values.
+
+This package is updated once a day using a Heroku bot. See
+[script/release.sh](https://github.com/zeke/download-counts/blob/master/script/release.sh) and
+[zeke.sikelianos.com/npm-and-github-automation-with-heroku/](http://zeke.sikelianos.com/npm-and-github-automation-with-heroku/) for info on how that works.
 
 ```js
 const counts = require('download-counts')
