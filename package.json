@@ -1,6 +1,6 @@
 {
   "name": "download-counts",
-  "version": "1.28.0",
+  "version": "1.29.0",
   "description": "Average daily download counts for every npm package. Works offline.",
   "main": "index.json",
   "scripts": {
