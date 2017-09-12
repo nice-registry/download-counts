@@ -43,6 +43,26 @@ Object.keys(counts).slice(0, 10)
 //   'isarray' ]
 ```
 
+## Stats
+
+87% of the packages in the registry are downloaded 0-1 times per day.
+
+Downloads per Day | Packages
+--- | ---
+0-0 | 269045
+1-9 | 210471
+10-99 | 44155
+100-249 | 6589
+250-499 | 3426
+500-999 | 2676
+1000-4999 | 3457
+5000-9999 | 951
+10000-24999 | 755
+25000-49999 | 481
+50000-99999 | 385
+100000-10000000 | 768
+
+
 ## Tests
 
 ```sh

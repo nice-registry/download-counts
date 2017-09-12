@@ -24,7 +24,7 @@ const limiter = new Bottleneck(MAX_CONCURRENCY)
 
 let targets
 
-if (missingNames.length > 250) {
+if (missingNames.length > 1500) {
   // numerous new packages are published every hour, so let them pile up a bit.
   // otherwise this conditional will always be true and the `else` will never be run.
   console.log(`Found ${missingNames.length} packages without download counts. Fetching now...`)
@@ -32,7 +32,7 @@ if (missingNames.length > 250) {
   targets = missingNames
     .slice(0, MAX_PER_BATCH)
 } else {
-  console.log(`All packages have download counts. Updating ${MAX_PER_BATCH} of the most out-of-date counts...`)
+  console.log(`Most packages have download counts. Updating ${MAX_PER_BATCH} of the most out-of-date counts...`)
   // Find the most out-of-date files and update them.
   targets = existingFiles
     .map(filename => {
@@ -43,7 +43,7 @@ if (missingNames.length > 250) {
     })
     .sort((a, b) => a.time - b.time)
     .slice(0, MAX_PER_BATCH)
-    .map(filenameToPackageName)
+    .map(file => filenameToPackageName(file.name))
 }
 
 targets.forEach(pkg => {
