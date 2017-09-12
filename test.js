@@ -1,19 +1,18 @@
-const expect = require('chai').expect
-const describe = require('mocha').describe
-const it = require('mocha').it
+require('chai').should()
+const {describe, it} = require('mocha')
 const counts = require('.')
 const keys = Object.keys(counts)
 
 describe('download-counts', () => {
   it('is an object with keys as names and download counts as values', () => {
-    expect(counts).to.be.an('object')
+    (typeof counts).should.eq('object')
   })
 
-  it('is has hella packages', () => {
-    expect(keys.length).to.be.above(370 * 1000)
+  it('has hella packages', () => {
+    keys.length.should.be.above(500 * 1000)
   })
 
   it('sorts keys by count, descending', () => {
-    expect(counts[keys[0]] > counts[keys[1]]).to.be.true
+    (counts[keys[0]] > counts[keys[1]]).should.eq(true)
   })
 })

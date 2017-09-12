@@ -8,9 +8,10 @@ const isNumber = require('is-number')
 const humanInterval = require('human-interval')
 const allNames = require('all-the-package-names')
 
+const {filenameToPackageName, packageNameToFilename} = require('../lib/util')
 const dataPath = path.join(__dirname, '../data')
 const MAX_PER_BATCH = 10000000
-const MAX_CONCURRENCY = 2
+const MAX_CONCURRENCY = 4
 
 const existingFiles = fs.readdirSync(dataPath)
 const existingNames = existingFiles
@@ -25,6 +26,10 @@ let targets
 
 if (missingNames.length) {
   // Some packages have never had their downloads counted
+
+  // TODO: Maybe only run this when over a certain number of missing names exist,
+  // otherwise, this condition might almost always be true.
+  //
   targets = missingNames
     .slice(0, MAX_PER_BATCH)
 } else {
@@ -50,37 +55,30 @@ limiter.on('idle', () => {
   process.exit()
 })
 
-function filenameToPackageName (filename) {  
-  return filename
-    .replace('___', '/') // scoped packages
-    .replace('.json', '') // remove file extension
-}
-
-function packageNameToFilename (name) {  
-  return name
-    .replace('/', '___') // scoped packages
-    .replace(/$/, '.json') // add file extension
-}
-
 function getDownloads (pkgName) {
   const url = `https://api.npmjs.org/downloads/range/${startDate}:${endDate}/${pkgName}`
-  // console.log(url)
+  const filename = path.join(dataPath, packageNameToFilename(pkgName))
+
   return got(url, {json: true})
     .then(result => {
       const downloads = result.body.downloads
       if (!downloads) return
-      const name = result.body.package
-      if (isNumber(name)) return
+      if (isNumber(pkgName)) return
       const total = chain(downloads).map('downloads').reduce((a, b) => a + b, 0).value()
       const days = downloads.length
       const average = Math.floor(total / days)
-      const filename = path.join(dataPath, packageNameToFilename(name))
-      console.log(name, average)
+      
+      console.log(pkgName, average)
       fs.writeFileSync(filename, average)
     })
     .catch(error => {
-      console.error('Error!')
-      console.error(url)
-      console.error(error)
+      if (error && error.statusCode === 404) {
+        console.log(pkgName, 0,  '(404 response)')
+        fs.writeFileSync(filename, 0)
+      } else {
+        console.error('Error!')
+        console.error(url)
+        console.error(error)
+      }
     })
 }
