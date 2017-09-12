@@ -4,23 +4,30 @@
   "description": "Average daily download counts for every npm package. Works offline.",
   "main": "index.json",
   "scripts": {
-    "build": "node script/build.js > index.json",
+    "collect": "node script/collect.js",
+    "stitch": "node script/stitch.js",
+    "build": "npm run collect && npm run stitch",
     "release": "./script/release.sh",
-    "test": "mocha && standard && standard-markdown"
+    "test": "mocha"
   },
   "repository": "https://github.com/zeke/download-counts",
   "author": "Zeke Sikelianos <zeke@sikelianos.com>",
   "license": "MIT",
   "devDependencies": {
+    "all-the-package-names": "^1.3341.0",
+    "bottleneck": "^1.16.0",
     "chai": "^3.5.0",
     "got": "^6.7.1",
     "human-interval": "^0.1.6",
     "is-number": "^3.0.0",
     "lodash": "^4.17.4",
     "mocha": "^3.2.0",
-    "package-stream": "^1.0.2",
-    "require-dir": "^0.3.1",
-    "standard": "^8.6.0",
+    "require-dir": "^0.3.2",
+    "require-directory": "^2.1.1",
+    "standard": "^10.0.3",
     "standard-markdown": "^2.3.0"
+  },
+  "standard": {
+    "ignore": "/data/**"
   }
 }

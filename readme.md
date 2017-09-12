@@ -8,12 +8,11 @@ This package:
 - collects one year's worth of download data for each package.
 - is a key-value object. Keys are package names, values are average daily downloads.
 - works offline. It's just a big JSON object.
-- weighs about 8 MB.
-- is updated every day using a Heroku bot. See
+- weighs about 12 MB.
+- includes scoped package names
+- is regularly updated using a Heroku bot. See
 [script/release.sh](https://github.com/zeke/download-counts/blob/master/script/release.sh) and
 [zeke.sikelianos.com/npm-and-github-automation-with-heroku/](http://zeke.sikelianos.com/npm-and-github-automation-with-heroku/) for info on how that works.
-- does not include scoped packages (e.g. `@foo/bar`), as npm does
-[not provide them](https://github.com/npm/registry/issues/59).
 
 ## Installation
 
@@ -43,6 +42,26 @@ Object.keys(counts).slice(0, 10)
 //   'inherits',
 //   'isarray' ]
 ```
+
+## Stats
+
+87% of the packages in the registry are downloaded 0-1 times per day.
+
+Downloads per Day | Packages
+--- | ---
+0-0 | 269045
+1-9 | 210471
+10-99 | 44155
+100-249 | 6589
+250-499 | 3426
+500-999 | 2676
+1000-4999 | 3457
+5000-9999 | 951
+10000-24999 | 755
+25000-49999 | 481
+50000-99999 | 385
+100000-10000000 | 768
+
 
 ## Tests
 
