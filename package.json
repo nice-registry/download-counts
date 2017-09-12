@@ -8,13 +8,13 @@
     "stitch": "node script/stitch.js",
     "build": "npm run collect && npm run stitch",
     "release": "./script/release.sh",
-    "test": "mocha && standard --fix && standard-markdown"
+    "test": "mocha"
   },
   "repository": "https://github.com/zeke/download-counts",
   "author": "Zeke Sikelianos <zeke@sikelianos.com>",
   "license": "MIT",
   "devDependencies": {
-    "all-the-package-names": "^1.3334.0",
+    "all-the-package-names": "^1.3341.0",
     "bottleneck": "^1.16.0",
     "chai": "^3.5.0",
     "got": "^6.7.1",

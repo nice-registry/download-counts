@@ -5,9 +5,9 @@ set -o errexit    # always exit on error
 set -o pipefail   # honor exit codes when piping
 set -o nounset    # fail on unset variables
 
-# clone the repo and fetch new names
 git clone https://github.com/zeke/download-counts
 cd download-counts
+npm install
 npm run build
 npm test
 

@@ -10,7 +10,7 @@ const allNames = require('all-the-package-names')
 
 const {filenameToPackageName, packageNameToFilename} = require('../lib/util')
 const dataPath = path.join(__dirname, '../data')
-const MAX_PER_BATCH = 10000000
+const MAX_PER_BATCH = 10000
 const MAX_CONCURRENCY = 4
 
 const existingFiles = fs.readdirSync(dataPath)
@@ -24,15 +24,15 @@ const limiter = new Bottleneck(MAX_CONCURRENCY)
 
 let targets
 
-if (missingNames.length) {
+if (missingNames.length > 250) {
+  // numerous new packages are published every hour, so let them pile up a bit.
+  // otherwise this conditional will always be true and the `else` will never be run.
+  console.log(`Found ${missingNames.length} packages without download counts. Fetching now...`)
   // Some packages have never had their downloads counted
-
-  // TODO: Maybe only run this when over a certain number of missing names exist,
-  // otherwise, this condition might almost always be true.
-  //
   targets = missingNames
     .slice(0, MAX_PER_BATCH)
 } else {
+  console.log(`All packages have download counts. Updating ${MAX_PER_BATCH} of the most out-of-date counts...`)
   // Find the most out-of-date files and update them.
   targets = existingFiles
     .map(filename => {
