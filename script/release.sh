@@ -15,7 +15,7 @@ npm test
 [[ `git status --porcelain` ]] || exit
 
 count=$(ls -al data | wc -l)
-git add data/*
+git add data.tgz
 git config user.email "zeke@sikelianos.com"
 git config user.name "Zeke Sikelianos"
 git commit -m "$count packages"
