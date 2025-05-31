@@ -89,8 +89,26 @@ if (!fs.existsSync(STATE_PATH)) {
   // Normally you'd just `import "all-the-package-names"` to use it, but since
   // we're installing it dynamically when our (ESM) script is already running,
   // we can't, so we reach into its innards ourselves instead:
-  const packageNames = JSON.parse(
+  let packageNames = JSON.parse(
     fs.readFileSync('node_modules/all-the-package-names/names.json')
+  );
+
+  // npm lets you publish scoped packages with a '..' in their name, like
+  // @chee/.. or @explodingcabbage/..
+  // However, essentially everything in the registry fails to handle these
+  // properly because the registry requires you to pass package names as URL
+  // segments and a segment of '..' gets parsed (per the URL specs!) as having
+  // the same meaning as in a file path - i.e. a URL like
+  //   https://api.npmjs.org/downloads/point/last-month/@chee/..
+  // gets rewritten (clientside by browsers, but also serverside by the npm
+  // API) to
+  //   https://api.npmjs.org/downloads/point/last-month
+  // which will return the total download count of ALL packages in the last
+  // month. There is no way to actually get the download count for these
+  // mischievous packages, so we filter them out. Similar consideration applies
+  // to packages with a single dot as a segment.
+  packageNames = packageNames.filter(
+    name => !name.split('/').includes('.') && !name.split('/').includes('..')
   );
 
   // Scoped and unscoped packages need to be handled differently, since the
