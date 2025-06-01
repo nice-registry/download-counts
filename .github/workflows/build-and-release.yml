@@ -3,7 +3,7 @@ permissions:
   contents: write
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
 concurrency:
   group: ${{ github.workflow }}
 jobs:
