@@ -83,6 +83,9 @@ async function gitCommitAndPush(message) {
 if (!fs.existsSync(STATE_PATH)) {
   console.log(STATE_PATH, "doesn't yet exist. Creating it...");
 
+  // Read package.json now (before the install below); we'll modify it later.
+  const pkgJson = JSON.parse(fs.readFileSync('package.json').toString());
+
   // We'll use the latest all-the-package-names package list:
   await promisify(execFile)('npm', ['install', 'all-the-package-names@latest']);
 
@@ -142,7 +145,6 @@ if (!fs.existsSync(STATE_PATH)) {
   // In practice, this way of updating package.json preserves key order and
   // formatting, so it's okay (even though this pattern for updating a JSON
   // file is not guaranteed to always preserve those things in general):
-  const pkgJson = JSON.parse(fs.readFileSync('package.json').toString());
   pkgJson.version = version;
   fs.writeFileSync(
     'package.json',
