@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/nice-registry/download-counts.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "main": "counts.json",
   "files": [
