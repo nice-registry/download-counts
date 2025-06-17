@@ -1,0 +1,17 @@
+run-name: Advance build periodically
+permissions:
+  contents: write
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+concurrency:
+  group: ${{ github.workflow }}
+jobs:
+  incrementally-build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          node buildAndRelease.js
+        env:
+          NPM_PUBLISH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}

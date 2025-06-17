@@ -1,0 +1,19 @@
+{
+  "name": "download-counts",
+  "version": "2.0.0",
+  "description": "",
+  "homepage": "https://github.com/nice-registry/download-counts#readme",
+  "bugs": {
+    "url": "https://github.com/nice-registry/download-counts/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nice-registry/download-counts.git"
+  },
+  "license": "ISC",
+  "type": "module",
+  "main": "counts.json",
+  "files": [
+    "counts.json"
+  ]
+}
