@@ -1,1 +1,4 @@
-data
+# These can get generated when running buildAndRelease.js locally, but we never
+# want to commit them:
+node_modules
+package-lock.json

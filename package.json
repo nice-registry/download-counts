@@ -1,35 +1,19 @@
 {
   "name": "download-counts",
-  "version": "1.81.1",
-  "description": "Average daily download counts for every npm package. Works offline.",
-  "main": "index.json",
-  "scripts": {
-    "collect": "node script/collect.js",
-    "stitch": "node script/stitch.js",
-    "prebuild": "tar xfz data.tgz data",
-    "build": "npm run collect && npm run stitch",
-    "postbuild": "tar cfz data.tgz data",
-    "release": "./script/release.sh",
-    "test": "mocha"
+  "version": "2.0.0",
+  "description": "Monthly download counts for every npm package, as a big static object.",
+  "homepage": "https://github.com/nice-registry/download-counts#readme",
+  "bugs": {
+    "url": "https://github.com/nice-registry/download-counts/issues"
   },
-  "repository": "https://github.com/zeke/download-counts",
-  "author": "Zeke Sikelianos <zeke@sikelianos.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nice-registry/download-counts.git"
+  },
   "license": "MIT",
-  "devDependencies": {
-    "all-the-package-names": "^1.3341.0",
-    "bottleneck": "^1.16.0",
-    "chai": "^3.5.0",
-    "got": "^6.7.1",
-    "human-interval": "^0.1.6",
-    "is-number": "^3.0.0",
-    "lodash": "^4.17.4",
-    "mocha": "^3.2.0",
-    "require-dir": "^0.3.2",
-    "require-directory": "^2.1.1",
-    "standard": "^10.0.3",
-    "standard-markdown": "^2.3.0"
-  },
-  "standard": {
-    "ignore": "/data/**"
-  }
+  "type": "module",
+  "main": "counts.json",
+  "files": [
+    "counts.json"
+  ]
 }
