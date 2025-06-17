@@ -3,7 +3,10 @@ permissions:
   contents: write
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    # Run once per hour, at an arbitrary non-round-number minute to try to
+    # dodge the high load on GitHub Actions that happens at the beginning of
+    # each hour and leads to jobs being delayed.
+    - cron: "41 * * * *"
 concurrency:
   group: ${{ github.workflow }}
 jobs:
