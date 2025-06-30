@@ -174,12 +174,8 @@ if (state.published) {
 // SCENARIO 4: We have completed the build process but not yet published it to
 //             npm; it's time to publish.
 if (fs.existsSync(pkg.main)) {
-  // Oddly, npm's CLI doesn't seem to have a way to pass an auth token to it
-  // without writing anything to a config file. So we do that.
-  await promisify(execFile)(
-    'npm',
-    ['config', 'set', '//registry.npmjs.org/:_authToken=${NPM_PUBLISH_TOKEN}']
-  );
+  // (NPM_PUBLISH_TOKEN is referenced by our .npmrc. As best I can tell, having
+  // a config file is *necessary* to use an auth token with npm, oddly enough.)
   if (!process.env.NPM_PUBLISH_TOKEN) {
     console.error(
       'No NPM_PUBLISH_TOKEN set. For runs in GitHub Actions, this should be ' +
