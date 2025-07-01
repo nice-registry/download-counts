@@ -5,7 +5,7 @@ The https://npmjs.org/package/download-counts package, updated with a new versio
 To check monthly download counts of individual packages:
 
 ```
-> const downloadCounts = require('@explodingcabbage/package-counts')
+> const downloadCounts = require('download-counts')
 undefined
 > downloadCounts.lodash
 310086369
