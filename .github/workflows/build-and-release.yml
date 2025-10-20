@@ -1,5 +1,6 @@
 run-name: Advance build periodically
 permissions:
+  id-token: write
   contents: write
 on:
   schedule:
@@ -13,8 +14,11 @@ jobs:
   incrementally-build-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Update npm
+        run: npm install -g npm@11
       - run: |
           node buildAndRelease.js
-        env:
-          NPM_PUBLISH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
