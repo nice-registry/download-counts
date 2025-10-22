@@ -17,8 +17,21 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: "lts/*"
+
+      # At the time of writing, we need to update npm to 11.5.1 or later to
+      # get support for Trusted Publishing via GitHub Actions. In future, once
+      # the image and/or setup-node action give us that out of the box, we can
+      # delete this step (and maybe also stop using setup-node if ubuntu-latest
+      # contains a recent enough npm version).
       - name: Update npm
-        run: npm install -g npm@11
+        run: npm install -g npm@latest
+
+      # (So we can diagnose any breakages caused by new Node or npm releases)
+      - name: Print Node & npm versions
+        run: |
+          node --version
+          npm --version
+
       - run: |
           node buildAndRelease.js
