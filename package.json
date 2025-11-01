@@ -1,6 +1,6 @@
 {
   "name": "download-counts",
-  "version": "2.0.0",
+  "version": "2.20251101.0",
   "description": "Monthly download counts for every npm package, as a big static object.",
   "homepage": "https://github.com/nice-registry/download-counts#readme",
   "bugs": {
