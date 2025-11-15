@@ -241,10 +241,10 @@ const counts = {};
 //
 // We:
 // * Run this many "threads" sending requests...
-const MAX_SIMULTANEOUS_REQUESTS = 20;
+const MAX_SIMULTANEOUS_REQUESTS = 4;
 // * ... and have each thread wait at least this many ms after starting one
 // request before it starts the next
-const MIN_REQUEST_INTERVAL_MS = 500
+const MIN_REQUEST_INTERVAL_MS = 600
 // Just in case, though, we ALSO pause if we get a 429 response and wait for
 // the number of seconds indicated in the Retry-After header. If that happens,
 // the timestamp to wait until gets stored in this variable and respected by
@@ -295,6 +295,7 @@ function createThrottledFetcher() {
         console.error(
           'Got a 429 error without the expected integer Retry-After header.'
         );
+        console.error(`429 response body was: ${await resp.text()}`)
         // Let's just sleep for an hour to be conservative. Multiple things
         // need fixing in this script if we ever reach this branch, anyway.
         retryAfterTimestampMs = Math.max(
