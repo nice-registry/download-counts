@@ -295,6 +295,7 @@ function createThrottledFetcher() {
         console.error(
           'Got a 429 error without the expected integer Retry-After header.'
         );
+        console.error(`429 response body was: ${await resp.text()}`)
         // Let's just sleep for an hour to be conservative. Multiple things
         // need fixing in this script if we ever reach this branch, anyway.
         retryAfterTimestampMs = Math.max(
