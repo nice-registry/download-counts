@@ -241,7 +241,7 @@ const counts = {};
 //
 // We:
 // * Run this many "threads" sending requests...
-const MAX_SIMULTANEOUS_REQUESTS = 16;
+const MAX_SIMULTANEOUS_REQUESTS = 4;
 // * ... and have each thread wait at least this many ms after starting one
 // request before it starts the next
 const MIN_REQUEST_INTERVAL_MS = 600
