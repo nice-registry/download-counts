@@ -16,7 +16,7 @@ const BULK_QUERY_BATCH_SIZE = 128;
  * The version number we'll use on npm for the release we're currently building.
  */
 function getVersion() {
-  // We do one releases per month, which should start building on the 1st of
+  // We do one release per month, which should start building on the 1st of
   // the month, and use data from whatever the latest all-the-package-names
   // release is when the build starts.
   // Version number format is 2.YYYYMMDD

@@ -1,6 +1,6 @@
 # download-counts
 
-The https://npmjs.org/package/download-counts package, updated with a new version twice per month, just exports a single giant static object whose keys are package names and whose values are monthly download counts.
+The https://npmjs.org/package/download-counts package, updated with a new version once per month, just exports a single giant static object whose keys are package names and whose values are monthly download counts.
 
 To check monthly download counts of individual packages:
 
@@ -49,7 +49,7 @@ ansi-regex 1028842864
 
 A version of download-counts was written by [@zeke](https://github.com/zeke) in 2017, then abandoned. It was replaced by a new version by [@ExplodingCabbage](https://github.com/ExplodingCabbage) in 2025.
 
-The build process for generating a new release runs twice per month. It runs in GitHub Actions (for free), where a scheduled job repeatedly calls a single script that, whenever it's called, advances the build a bit by fetching more download counts from the npm API and recording them in source control on a branch specific to that release.
+The build process for generating a new release runs once per month, and takes most of the month to run due to the npm API's very aggressive rate limiting. It runs in GitHub Actions (for free), where a scheduled job repeatedly calls a single script that, whenever it's called, advances the build a bit by fetching more download counts from the npm API and recording them in source control on a branch specific to that release.
 
 Please report bugs (including the npm package not getting updated with new versions) as [GitHub issues](https://github.com/nice-registry/download-counts/issues).
 
