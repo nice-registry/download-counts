@@ -1,11 +1,11 @@
-import fs from 'node:fs';
-import {promisify} from 'node:util';
-import {execFile} from 'node:child_process';
-import pkg from './package.json' with {type: 'json'};
+import fs from "node:fs";
+import { promisify } from "node:util";
+import { execFile } from "node:child_process";
+import pkg from "./package.json" with { type: "json" };
 
 // File we use to record (on a branch in source control) the progress of the
 // build process, which takes place over many invocations of this script:
-const STATE_PATH = 'state.json';
+const STATE_PATH = "state.json";
 
 // Maximum number of packages that can be listed in a single bulk query to the
 // npm API's download endpoint, per
@@ -33,8 +33,8 @@ function getVersion() {
   //   end to keep npm happy.
   const today = new Date();
   const yyyy = today.getUTCFullYear();
-  const mm = String(today.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(today.getUTCDate() >= 15 ? 15 : 1).padStart(2, '0');
+  const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(today.getUTCDate() >= 15 ? 15 : 1).padStart(2, "0");
   return `2.${yyyy}${mm}${dd}.0`;
 }
 
@@ -43,7 +43,7 @@ const version = getVersion();
 console.log("Proceeding with work on version", version);
 
 async function git(...command) {
-  return await promisify(execFile)('git', command);
+  return await promisify(execFile)("git", command);
 }
 
 // We checkout a branch dedicated to the build for this version (creating it
@@ -54,10 +54,10 @@ async function git(...command) {
 // bloating the size of the repo whenever a build runs.
 const branchName = `build-${version}`;
 try {
-  await git('fetch', 'origin', branchName);
-  await git('switch', branchName);
+  await git("fetch", "origin", branchName);
+  await git("switch", branchName);
 } catch (e) {
-  await git('switch', '-c', branchName);
+  await git("switch", "-c", branchName);
 }
 console.log("Switched to branch", branchName);
 
@@ -68,12 +68,15 @@ async function gitCommitAndPush(message) {
   // We don't set this via the `git config` command because that would mess
   // with your configured identity when you run this code locally.
   await git(
-    '-c', 'user.name=download-counts bot',
-    '-c', 'user.email=markrobertamery+download-counts@gmail.com',
-    'commit',
-    '-m', message
+    "-c",
+    "user.name=download-counts bot",
+    "-c",
+    "user.email=markrobertamery+download-counts@gmail.com",
+    "commit",
+    "-m",
+    message,
   );
-  await git('push', 'origin', `${branchName}:refs/heads/${branchName}`);
+  await git("push", "origin", `${branchName}:refs/heads/${branchName}`);
 }
 
 // SCENARIO 1: We don't have a build in progress.
@@ -84,16 +87,16 @@ if (!fs.existsSync(STATE_PATH)) {
   console.log(STATE_PATH, "doesn't yet exist. Creating it...");
 
   // Read package.json now (before the install below); we'll modify it later.
-  const pkgJson = JSON.parse(fs.readFileSync('package.json').toString());
+  const pkgJson = JSON.parse(fs.readFileSync("package.json").toString());
 
   // We'll use the latest all-the-package-names package list:
-  await promisify(execFile)('npm', ['install', 'all-the-package-names@latest']);
+  await promisify(execFile)("npm", ["install", "all-the-package-names@latest"]);
 
   // Normally you'd just `import "all-the-package-names"` to use it, but since
   // we're installing it dynamically when our (ESM) script is already running,
   // we can't, so we reach into its innards ourselves instead:
   let packageNames = JSON.parse(
-    fs.readFileSync('node_modules/all-the-package-names/names.json')
+    fs.readFileSync("node_modules/all-the-package-names/names.json"),
   );
 
   // npm lets you publish scoped packages with a '..' in their name, like
@@ -111,17 +114,17 @@ if (!fs.existsSync(STATE_PATH)) {
   // mischievous packages, so we filter them out. Similar consideration applies
   // to packages with a single dot as a segment.
   packageNames = packageNames.filter(
-    name => !name.split('/').includes('.') && !name.split('/').includes('..')
+    (name) => !name.split("/").includes(".") && !name.split("/").includes(".."),
   );
 
   // Scoped and unscoped packages need to be handled differently, since the
   // downloads API only allows bulk requests for unscoped packages. So we split
   // them up front into two queues, one of individual scoped packages and the
   // other of batches of unscoped packages we can query in bulk:
-  const singlePackages = packageNames.filter(name => name.includes('/'));
+  const singlePackages = packageNames.filter((name) => name.includes("/"));
   const unscopedPackageBatches = [];
   let batch = [];
-  for (const pkg of packageNames.filter(name => !name.includes('/'))) {
+  for (const pkg of packageNames.filter((name) => !name.includes("/"))) {
     batch.push(pkg);
     if (batch.length == BULK_QUERY_BATCH_SIZE) {
       unscopedPackageBatches.push(batch);
@@ -139,21 +142,18 @@ if (!fs.existsSync(STATE_PATH)) {
       singlePackages,
       unscopedPackageBatches,
       status403Packages: [],
-    })
+    }),
   );
 
   // In practice, this way of updating package.json preserves key order and
   // formatting, so it's okay (even though this pattern for updating a JSON
   // file is not guaranteed to always preserve those things in general):
   pkgJson.version = version;
-  fs.writeFileSync(
-    'package.json',
-    JSON.stringify(pkgJson, null, 2)
-  );
+  fs.writeFileSync("package.json", JSON.stringify(pkgJson, null, 2));
 
-  await git('add', STATE_PATH, 'package.json');
+  await git("add", STATE_PATH, "package.json");
   await gitCommitAndPush(
-    `Initiate state file and update package.json for build ${version}`
+    `Initiate state file and update package.json for build ${version}`,
   );
   console.log("Committed and pushed new state file; exiting");
   process.exit();
@@ -167,35 +167,35 @@ const state = JSON.parse(fs.readFileSync(STATE_PATH).toString());
 // SCENARIO 5: We've already completed the entire build process and published
 //             a new version to npm.
 if (state.published) {
-  console.log(version, 'was already published to npm. Nothing left to do!');
+  console.log(version, "was already published to npm. Nothing left to do!");
   process.exit();
 }
 
 // SCENARIO 4: We have completed the build process but not yet published it to
 //             npm; it's time to publish.
 if (fs.existsSync(pkg.main)) {
-  await promisify(execFile)('npm', ['publish']);
+  await promisify(execFile)("npm", ["publish"]);
   state.published = true;
   fs.writeFileSync(STATE_PATH, JSON.stringify(state));
-  await git('add', STATE_PATH);
+  await git("add", STATE_PATH);
   await gitCommitAndPush(`Version ${version} is now published to npm`);
-  console.log('Published version', version, 'to npm successfully. Hooray!');
+  console.log("Published version", version, "to npm successfully. Hooray!");
   process.exit();
 }
 
 // Scenario 3: We've fetched download counts for every package, but haven't
 //             consolidated them into a single file ready to publish to npm.
 //             So we do that and commit it.
-if (state.singlePackages.length == 0 && state.unscopedPackageBatches.length == 0) {
-  const counts = JSON.parse(fs.readFileSync('counts0.json'));
+if (
+  state.singlePackages.length == 0 &&
+  state.unscopedPackageBatches.length == 0
+) {
+  const counts = JSON.parse(fs.readFileSync("counts0.json"));
   for (let i = 1; i < state.countsFilesSoFar; i++) {
-    Object.assign(
-      counts,
-      JSON.parse(fs.readFileSync(`counts${i}.json`))
-    );
+    Object.assign(counts, JSON.parse(fs.readFileSync(`counts${i}.json`)));
   }
-  fs.writeFileSync(pkg.main, JSON.stringify(counts))
-  await git('add', pkg.main);
+  fs.writeFileSync(pkg.main, JSON.stringify(counts));
+  await git("add", pkg.main);
   await gitCommitAndPush(`Wrote ${pkg.main}`);
   console.log(`${pkg.main} created. Next run should publish it to npm.`);
   process.exit();
@@ -244,7 +244,7 @@ const counts = {};
 const MAX_SIMULTANEOUS_REQUESTS = 3;
 // * ... and have each thread wait at least this many ms after starting one
 // request before it starts the next
-const MIN_REQUEST_INTERVAL_MS = 1000
+const MIN_REQUEST_INTERVAL_MS = 1000;
 // Just in case, though, we ALSO pause if we get a 429 response and wait for
 // the number of seconds indicated in the Retry-After header. If that happens,
 // the timestamp to wait until gets stored in this variable and respected by
@@ -266,14 +266,14 @@ function createThrottledFetcher() {
     // requests, including any that come in (on another thread) while we're
     // waiting.
     while (retryAfterTimestampMs - new Date() > 0) {
-      await new Promise(resolve => {
-        setTimeout(resolve, retryAfterTimestampMs - new Date())
+      await new Promise((resolve) => {
+        setTimeout(resolve, retryAfterTimestampMs - new Date());
       });
     }
 
     // Then set up the wait for the next request on this thread:
-    throttlingWait = new Promise(resolve => {
-      setTimeout(resolve, MIN_REQUEST_INTERVAL_MS)
+    throttlingWait = new Promise((resolve) => {
+      setTimeout(resolve, MIN_REQUEST_INTERVAL_MS);
     });
 
     // Finally(ish), actually make the request:
@@ -284,30 +284,30 @@ function createThrottledFetcher() {
       gotRateLimited = true;
       // (The download endpoint always just returns a number in its Retry-After
       // header, not a date)
-      const retryAfter = Number(resp.headers.get('Retry-After'));
+      const retryAfter = Number(resp.headers.get("Retry-After"));
       if (retryAfter) {
         retryAfterTimestampMs = Math.max(
           retryAfterTimestampMs,
-          retryAfter * 1000 + Number(new Date())
+          retryAfter * 1000 + Number(new Date()),
         );
         return await throttledFetch(...args);
       } else {
         console.error(
-          'Got a 429 error without the expected integer Retry-After header.'
+          "Got a 429 error without the expected integer Retry-After header.",
         );
-        console.error(`429 response body was: ${await resp.text()}`)
+        console.error(`429 response body was: ${await resp.text()}`);
         // Let's just sleep for an hour to be conservative. Multiple things
         // need fixing in this script if we ever reach this branch, anyway.
         retryAfterTimestampMs = Math.max(
           retryAfterTimestampMs,
-          60 * 60 * 1000 + Number(new Date())
+          60 * 60 * 1000 + Number(new Date()),
         );
         return await throttledFetch(...args);
       }
     }
 
-    return resp
-  }
+    return resp;
+  };
 }
 
 // How many "unexpected"/"random" request failures (i.e. ones of types we have
@@ -321,7 +321,7 @@ function recordUnexpectedError() {
   nRequestErrors++;
   if (nRequestErrors >= MAX_REQUEST_ERRORS) {
     console.error(
-      `Got alarmingly many (${nRequestErrors}) unexpected errors querying API.`
+      `Got alarmingly many (${nRequestErrors}) unexpected errors querying API.`,
     );
     process.exit(1);
   }
@@ -340,41 +340,41 @@ async function startFetcherThread() {
     if (state.unscopedPackageBatches.length > 0) {
       await fetchCountsForUnscopedBatch(
         state.unscopedPackageBatches.pop(),
-        throttledFetch
+        throttledFetch,
       );
     } else if (state.singlePackages.length > 0) {
       await fetchCountForSinglePackage(
         state.singlePackages.pop(),
-        throttledFetch
+        throttledFetch,
       );
-    } else throw 'unreachable';
+    } else throw "unreachable";
 
     queriesRemaining--;
     if (queriesRemaining % 250 == 0) {
       console.log(
         new Date(),
         queriesRemaining,
-        'more API requests to make before next save point'
+        "more API requests to make before next save point",
       );
     }
   }
 }
 
-const TIME_RANGE = 'last-month';
+const TIME_RANGE = "last-month";
 
 async function fetchCountsForUnscopedBatch(batch, throttledFetch) {
-  const batchStr = batch.join(',');
+  const batchStr = batch.join(",");
   let resp;
   try {
     resp = await throttledFetch(
-      `https://api.npmjs.org/downloads/point/${TIME_RANGE}/${batchStr}`
+      `https://api.npmjs.org/downloads/point/${TIME_RANGE}/${batchStr}`,
     );
   } catch (e) {
     // An error here means we didn't get a response AT ALL, e.g. due to a
     // network error or total server outage. This is almost certainly
     // temporary so we should retry.
     console.error(
-      `Failed to fetch ${batchStr}. Putting back in the queue to retry.`
+      `Failed to fetch ${batchStr}. Putting back in the queue to retry.`,
     );
     state.unscopedPackageBatches.push(batch);
     recordUnexpectedError();
@@ -410,7 +410,7 @@ async function fetchCountsForUnscopedBatch(batch, throttledFetch) {
     // Example URLs that trigger the 403:
     // * https://api.npmjs.org/downloads/point/last-month/leads-notify-vkm,leads-parser,leads-router,leads-shared,leads-switch-btn-vkm,leadsender_s3,leadshark-models,leadsheetjs,leadsimple-kve3lq75zd,leadsitelib,leadsmithaiv2,leadsoft-leadtrust-plugin,leadsoft-react-ui-kit,leadspent-far-cover,leadsquared,leadssu-webmaster-api,leadsx10-email-editor,leadsy,leadsync,leadsyncapp,leadtech-lib-datadog-build-tools,leadtech-lib-datadog-utils,leadtracker,leadup,leadutils,leadvm,leadwatch,leadzai-design-system,leaf,leaf-ai.js,leaf-along0,leaf-assistant.js,leaf-auth,leaf-auth-express,leaf-auth-router,leaf-body,leaf-boss-cbd-gummies-read-shocking-report,leaf-chart,leaf-cli,leaf-cli-asdasd,leaf-collapse-component-vue,leaf-components,leaf-connect,leaf-connect-cli,leaf-converter,leaf-cookies,leaf-crowd-thrown,leaf-cts-middleware,leaf-dashboard,leaf-db,leaf-dust,leaf-engine,leaf-fence-when-somehow,leaf-fix-deep,leaf-flip,leaf-flux-dispatcher,leaf-frame,leaf-framework,leaf-glucose,leaf-grid,leaf-it-to-me,leaf-javascript,leaf-jts,leaf-koa,leaf-koala,leaf-lib,leaf-log,leaf-machine,leaf-mate-premium-cbd-oil-must-read-shocking-reviews,leaf-mdns,leaf-observable,leaf-occur,leaf-onerror,leaf-orient,leaf-pkginfo,leaf-proto,leaf-protocol,leaf-query.js,leaf-react,leaf-react-ui,leaf-require,leaf-require-cli,leaf-reset,leaf-rule,leaf-sale-web3-official,leaf-scripts,leaf-semantic-core,leaf-server,leaf-simplest-round-ride,leaf-store,leaf-swam-longer,leaf-tools,leaf-tour,leaf-ts,leaf-typography,leaf-ui,leaf-ui-components,leaf-ui-font-test,leaf-ui-theme,leaf-utils,leaf-validation,leaf-validator,leaf-weather,leaf-web-cli,leaf-web-lib,leaf-webapp-lib,leaf-webpack-dev-middleware,leaf-wheel,leaf-wind-demo,leaf-yjx,leaf.js,leaf.seed,leaf4monkey-object-utils,leaf4monkey-xml,leaf_test,leaf_zs,leafage,leafast,leafbox,leafcase-assetlist,leafcase-authentication,leafcase-base,leafcase-caching,leafcase-couchdb,leafcase-couchdb-designdocument-manager,leafcase-data,leafcase-elasticsearch,leafcase-events
     // * TODO: an example with a single package
-    console.warn('Got', resp.status, 'response for batch', batchStr);
+    console.warn("Got", resp.status, "response for batch", batchStr);
     if (batch.length <= 3) {
       for (const pkg of batch) {
         state.singlePackages.push(pkg);
@@ -426,7 +426,7 @@ async function fetchCountsForUnscopedBatch(batch, throttledFetch) {
     // during some kind of outage. Retry.
     console.error(
       new Date(),
-      `Got unexpected ${resp.status} when trying to get batch ${batchStr}`
+      `Got unexpected ${resp.status} when trying to get batch ${batchStr}`,
     );
     state.unscopedPackageBatches.push(batch);
     recordUnexpectedError();
@@ -447,11 +447,11 @@ async function fetchCountForSinglePackage(packageName, throttledFetch) {
   let resp;
   try {
     resp = await throttledFetch(
-      `https://api.npmjs.org/downloads/point/${TIME_RANGE}/${packageName}`
+      `https://api.npmjs.org/downloads/point/${TIME_RANGE}/${packageName}`,
     );
   } catch (e) {
     console.error(
-      `Failed to fetch ${packageName}. Putting back in the queue to retry.`
+      `Failed to fetch ${packageName}. Putting back in the queue to retry.`,
     );
     state.singlePackages.push(packageName);
     recordUnexpectedError();
@@ -461,7 +461,7 @@ async function fetchCountForSinglePackage(packageName, throttledFetch) {
     // The Cloudflare WAF simply won't allow us to query download counts for
     // this package. We record this fact and move on.
     // TODO: Use web scraping to get these counts instead?
-    console.error('Got a 403 error for package', packageName);
+    console.error("Got a 403 error for package", packageName);
     state.status403Packages.push(packageName);
     return;
   } else if (resp.status === 404) {
@@ -472,12 +472,12 @@ async function fetchCountForSinglePackage(packageName, throttledFetch) {
     // all-the-package-names release but then get unpublished from the registry
     // before this script runs.
     // That's fine - we just leave it out from our data and move on.
-    console.log('Got 404 for (presumably unpublished) package', packageName);
+    console.log("Got 404 for (presumably unpublished) package", packageName);
     return;
   } else if (resp.status !== 200) {
     console.error(
       new Date(),
-      `Got unexpected ${resp.status} when trying to get ${packageName}`
+      `Got unexpected ${resp.status} when trying to get ${packageName}`,
     );
     state.singlePackages.push(packageName);
     recordUnexpectedError();
@@ -496,26 +496,20 @@ for (let i = 0; i < MAX_SIMULTANEOUS_REQUESTS; i++) {
 await Promise.all(threads);
 
 const counts_path = `counts${state.countsFilesSoFar}.json`;
-fs.writeFileSync(
-  counts_path,
-  JSON.stringify(counts)
-);
+fs.writeFileSync(counts_path, JSON.stringify(counts));
 state.countsFilesSoFar++;
-fs.writeFileSync(
-  STATE_PATH,
-  JSON.stringify(state)
-);
+fs.writeFileSync(STATE_PATH, JSON.stringify(state));
 
-await git('add', counts_path);
-await git('add', STATE_PATH);
+await git("add", counts_path);
+await git("add", STATE_PATH);
 await gitCommitAndPush(`Fetched download counts for some packages`);
 
 console.log("Committed and pushed latest counts file");
 
 if (gotRateLimited) {
   console.error(
-    'Ran to completion - but along the way we got rate limited with 429s.',
-    'That should never happen!'
+    "Ran to completion - but along the way we got rate limited with 429s.",
+    "That should never happen!",
   );
   process.exit(1);
 }
