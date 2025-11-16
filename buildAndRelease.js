@@ -241,10 +241,10 @@ const counts = {};
 //
 // We:
 // * Run this many "threads" sending requests...
-const MAX_SIMULTANEOUS_REQUESTS = 4;
+const MAX_SIMULTANEOUS_REQUESTS = 3;
 // * ... and have each thread wait at least this many ms after starting one
 // request before it starts the next
-const MIN_REQUEST_INTERVAL_MS = 600
+const MIN_REQUEST_INTERVAL_MS = 1000
 // Just in case, though, we ALSO pause if we get a 429 response and wait for
 // the number of seconds indicated in the Retry-After header. If that happens,
 // the timestamp to wait until gets stored in this variable and respected by
