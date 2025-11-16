@@ -16,9 +16,9 @@ const BULK_QUERY_BATCH_SIZE = 128;
  * The version number we'll use on npm for the release we're currently building.
  */
 function getVersion() {
-  // We do two releases per month, which should start building on the 1st and
-  // 15th of the month, and use data from whatever the latest
-  // all-the-package-names release is when the build starts.
+  // We do one releases per month, which should start building on the 1st of
+  // the month, and use data from whatever the latest all-the-package-names
+  // release is when the build starts.
   // Version number format is 2.YYYYMMDD
   // Reasons for this:
   // * Major version number of 2 distinguishes these builds from ones built
@@ -26,7 +26,7 @@ function getVersion() {
   // * It's useful to be able to immediately see from the version how outdated
   //   the data is without checking the release date on npm
   // * This format means that the default version specifier npm or yarn will
-  //   put in a user's package.json, of something like ^2.20250615, will allow
+  //   put in a user's package.json, of something like ^2.20251201, will allow
   //   them to upgrade to the latest version automatically until such time as
   //   we increment the "2." to a "3.", which is what we want
   // * Valid package versions need to have 3 parts, so we stick a '.0' on the
@@ -34,7 +34,7 @@ function getVersion() {
   const today = new Date();
   const yyyy = today.getUTCFullYear();
   const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(today.getUTCDate() >= 15 ? 15 : 1).padStart(2, "0");
+  const dd = "01";
   return `2.${yyyy}${mm}${dd}.0`;
 }
 
@@ -209,7 +209,7 @@ if (
 // unexpected crash of the script won't lose us too much work, and 2. if
 // there's ever a persistent crash at a particular point, we can kick off the
 // script from not long before then to debug it.
-let queriesRemaining = 100000;
+let queriesRemaining = 10000;
 
 // Object in which we'll store the package counts we fetched from the API on
 // this run of the script. We'll commit these to an intermediate counts file
@@ -218,33 +218,33 @@ const counts = {};
 
 // Logic for rate limiting calls to the npm API follows.
 //
-// I don't know exactly what the rate limit is on api.npmjs.org/downloads,
-// beyond the 5 million per month limit on total calls to all npm APIs
-// described in npm's terms of service, because there are absolutely no
-// non-archived docs for the download API that I can find anywhere and npm for
-// some reason seem to have a policy of not disclosing the rate limits on their
-// APIs. Community requests for such numbers simply go unanswered - see
+// As of 15th November 2025, the rate limit seems to be extremely strict; even
+// seconds requests at a rate of one request per second results in getting a
+// temporary IP ban almost instantly. We therefore have this script maintain an
+// average rate of below 1 request per 2 seconds. Such trial and error is
+// probably the best we can do to determine a rate of a requests, since the
+// *exact* rules of npm's API rate limits are, as far as I know, secret, and
+// past requests for the numbers simply go unanswered - e.g. see
 // https://github.com/orgs/community/discussions/152515#discussioncomment-13094301
-// for an example.
 //
-// Therefore any software that wants to query the registry in bulk must first
-// try to determine through trial and error a rate of requests that won't result
-// in getting 429 rate limiting errors. Empirically, there's a very aggressive
-// limit on the /downloads endpoint, and hitting it with an access token
-// (sometimes claimed to relax npm rate limits) does not make the limit any
-// more liberal.
+// This throttling means a full build of a new release will take almost a
+// month. This sucks, but so be it; it can't be helped (except by distributing
+// the work over multiple IPs to dodge the rate limit).
 //
-// The self-imposed throttling described by the two constants below seems to
-// avoid ever getting a 429 error. Unfortunately, it also means a full build of
-// a new release will take days. So be it; it can't be helped (except by
-// distributing the work over multiple IPs to dodge the rate limit).
+// Note that the rate limit USED to be much more lenient; before 15th November,
+// we could do a full build in under a day, and used to therefore do two builds
+// per month. The API also used to include Retry-After headers with 429 rate
+// limiting responses. But both of these things have changed, meaning the API
+// is now pretty hostile to efforts like this to export the data in bulk. But
+// we can still *just* barely still do one build per month without needing to
+// hit the API from multiple IPs.
 //
 // We:
 // * Run this many "threads" sending requests...
-const MAX_SIMULTANEOUS_REQUESTS = 3;
+const MAX_SIMULTANEOUS_REQUESTS = 2;
 // * ... and have each thread wait at least this many ms after starting one
 // request before it starts the next
-const MIN_REQUEST_INTERVAL_MS = 1000;
+const MIN_REQUEST_INTERVAL_MS = 4000;
 // Just in case, though, we ALSO pause if we get a 429 response and wait for
 // the number of seconds indicated in the Retry-After header. If that happens,
 // the timestamp to wait until gets stored in this variable and respected by
