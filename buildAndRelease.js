@@ -1,3 +1,4 @@
+import process from "process";
 import fs from "node:fs";
 import { promisify } from "node:util";
 import { execFile } from "node:child_process";
@@ -11,6 +12,22 @@ const STATE_PATH = "state.json";
 // npm API's download endpoint, per
 // https://github.com/npm/registry/blob/main/docs/download-counts.md
 const BULK_QUERY_BATCH_SIZE = 128;
+
+const IS_VERBOSE_MODE = process.argv.includes("--verbose");
+
+function log(...args) {
+  // We want to timestamp our logs, to let us monitor how long things take and
+  // spot what steps are slow, but to minimize noise, we don't want to include
+  // a full date. So we show just the time:
+  const timeStr = new Date().toISOString().split("T")[1].split("Z")[0];
+  console.log(timeStr, ...args);
+}
+
+function logVerbose(...args) {
+  if (IS_VERBOSE_MODE) {
+    log(...args);
+  }
+}
 
 /**
  * The version number we'll use on npm for the release we're currently building.
@@ -40,7 +57,7 @@ function getVersion() {
 
 const version = getVersion();
 
-console.log("Proceeding with work on version", version);
+log("Proceeding with work on version", version);
 
 async function git(...command) {
   return await promisify(execFile)("git", command);
@@ -59,7 +76,7 @@ try {
 } catch (e) {
   await git("switch", "-c", branchName);
 }
-console.log("Switched to branch", branchName);
+log("Switched to branch", branchName);
 
 async function gitCommitAndPush(message) {
   // Can't just use --author here - we need a *committer* identity, not just an
@@ -84,7 +101,7 @@ async function gitCommitAndPush(message) {
 // version number in package.json, commit, and exit. Real work will begin on
 // the next call to the script.
 if (!fs.existsSync(STATE_PATH)) {
-  console.log(STATE_PATH, "doesn't yet exist. Creating it...");
+  log(STATE_PATH, "doesn't yet exist. Creating it...");
 
   // Read package.json now (before the install below); we'll modify it later.
   const pkgJson = JSON.parse(fs.readFileSync("package.json").toString());
@@ -155,7 +172,7 @@ if (!fs.existsSync(STATE_PATH)) {
   await gitCommitAndPush(
     `Initiate state file and update package.json for build ${version}`,
   );
-  console.log("Committed and pushed new state file; exiting");
+  log("Committed and pushed new state file; exiting");
   process.exit();
 }
 
@@ -167,7 +184,7 @@ const state = JSON.parse(fs.readFileSync(STATE_PATH).toString());
 // SCENARIO 5: We've already completed the entire build process and published
 //             a new version to npm.
 if (state.published) {
-  console.log(version, "was already published to npm. Nothing left to do!");
+  log(version, "was already published to npm. Nothing left to do!");
   process.exit();
 }
 
@@ -179,7 +196,7 @@ if (fs.existsSync(pkg.main)) {
   fs.writeFileSync(STATE_PATH, JSON.stringify(state));
   await git("add", STATE_PATH);
   await gitCommitAndPush(`Version ${version} is now published to npm`);
-  console.log("Published version", version, "to npm successfully. Hooray!");
+  log("Published version", version, "to npm successfully. Hooray!");
   process.exit();
 }
 
@@ -197,7 +214,7 @@ if (
   fs.writeFileSync(pkg.main, JSON.stringify(counts));
   await git("add", pkg.main);
   await gitCommitAndPush(`Wrote ${pkg.main}`);
-  console.log(`${pkg.main} created. Next run should publish it to npm.`);
+  log(`${pkg.main} created. Next run should publish it to npm.`);
   process.exit();
 }
 
@@ -244,7 +261,7 @@ const counts = {};
 const MAX_SIMULTANEOUS_REQUESTS = 2;
 // * ... and have each thread wait at least this many ms after starting one
 // request before it starts the next
-const MIN_REQUEST_INTERVAL_MS = 4000;
+const MIN_REQUEST_INTERVAL_MS = 3000;
 // Just in case, though, we ALSO pause if we get a 429 response and wait for
 // the number of seconds indicated in the Retry-After header. If that happens,
 // the timestamp to wait until gets stored in this variable and respected by
@@ -254,18 +271,30 @@ let retryAfterTimestampMs = 0;
 // with an error status code at the end of the script to mark the GitHub Action
 // as failed and notify the maintainers that something bad happened.
 let gotRateLimited = false;
+// Request id used for logging
+let requestCount = 0;
 function createThrottledFetcher() {
   let throttlingWait = null;
   return async function throttledFetch(...args) {
+    const requestId = requestCount++;
+    logVerbose(`throttledFetch call ${requestId}: begun with args`, args);
+
     // First make sure we've waiting at least MIN_REQUEST_INTERVAL_MS between
     // request starts.
     await throttlingWait;
+
+    logVerbose(`throttledFetch call ${requestId}: finished throttling wait`);
 
     // THEN make sure we're also obeying any demands from the API that we wait
     // until a given time (communicated via a Retry-After header) to make more
     // requests, including any that come in (on another thread) while we're
     // waiting.
     while (retryAfterTimestampMs - new Date() > 0) {
+      logVerbose(
+        `throttledFetch call ${requestId}: waiting until`,
+        retryAfterTimestampMs,
+        "to respect Retry-After",
+      );
       await new Promise((resolve) => {
         setTimeout(resolve, retryAfterTimestampMs - new Date());
       });
@@ -276,11 +305,16 @@ function createThrottledFetcher() {
       setTimeout(resolve, MIN_REQUEST_INTERVAL_MS);
     });
 
+    logVerbose(`throttledFetch call ${requestId}: making HTTP request`);
+
     // Finally(ish), actually make the request:
     const resp = await fetch(...args);
 
+    logVerbose(`throttledFetch call ${requestId}: got response`);
+
     // Then handle rate limiting responses, if we get them:
     if (resp.status == 429) {
+      logVerbose(`throttledFetch call ${requestId}: response was 429`);
       gotRateLimited = true;
       // (The download endpoint always just returns a number in its Retry-After
       // header, not a date)
@@ -292,10 +326,12 @@ function createThrottledFetcher() {
         );
         return await throttledFetch(...args);
       } else {
-        console.error(
-          "Got a 429 error without the expected integer Retry-After header.",
+        log(
+          `throttledFetch call ${requestId}: Got a 429 error without the expected integer Retry-After header.`,
         );
-        console.error(`429 response body was: ${await resp.text()}`);
+        log(
+          `throttledFetch call ${requestId}: 429 response body was: ${await resp.text()}`,
+        );
         // Let's just sleep for an hour to be conservative. Multiple things
         // need fixing in this script if we ever reach this branch, anyway.
         retryAfterTimestampMs = Math.max(
@@ -320,7 +356,7 @@ const MAX_REQUEST_ERRORS = 80;
 function recordUnexpectedError() {
   nRequestErrors++;
   if (nRequestErrors >= MAX_REQUEST_ERRORS) {
-    console.error(
+    log(
       `Got alarmingly many (${nRequestErrors}) unexpected errors querying API.`,
     );
     process.exit(1);
@@ -351,11 +387,7 @@ async function startFetcherThread() {
 
     queriesRemaining--;
     if (queriesRemaining % 250 == 0) {
-      console.log(
-        new Date(),
-        queriesRemaining,
-        "more API requests to make before next save point",
-      );
+      log(queriesRemaining, "more API requests to make before next save point");
     }
   }
 }
@@ -373,9 +405,7 @@ async function fetchCountsForUnscopedBatch(batch, throttledFetch) {
     // An error here means we didn't get a response AT ALL, e.g. due to a
     // network error or total server outage. This is almost certainly
     // temporary so we should retry.
-    console.error(
-      `Failed to fetch ${batchStr}. Putting back in the queue to retry.`,
-    );
+    log(`Failed to fetch ${batchStr}. Putting back in the queue to retry.`);
     state.unscopedPackageBatches.push(batch);
     recordUnexpectedError();
     return;
@@ -424,10 +454,7 @@ async function fetchCountsForUnscopedBatch(batch, throttledFetch) {
   } else if (resp.status !== 200) {
     // We've never seen this, but it seems possible we'll get e.g. a 500
     // during some kind of outage. Retry.
-    console.error(
-      new Date(),
-      `Got unexpected ${resp.status} when trying to get batch ${batchStr}`,
-    );
+    log(`Got unexpected ${resp.status} when trying to get batch ${batchStr}`);
     state.unscopedPackageBatches.push(batch);
     recordUnexpectedError();
     return;
@@ -450,9 +477,7 @@ async function fetchCountForSinglePackage(packageName, throttledFetch) {
       `https://api.npmjs.org/downloads/point/${TIME_RANGE}/${packageName}`,
     );
   } catch (e) {
-    console.error(
-      `Failed to fetch ${packageName}. Putting back in the queue to retry.`,
-    );
+    log(`Failed to fetch ${packageName}. Putting back in the queue to retry.`);
     state.singlePackages.push(packageName);
     recordUnexpectedError();
     return;
@@ -461,7 +486,7 @@ async function fetchCountForSinglePackage(packageName, throttledFetch) {
     // The Cloudflare WAF simply won't allow us to query download counts for
     // this package. We record this fact and move on.
     // TODO: Use web scraping to get these counts instead?
-    console.error("Got a 403 error for package", packageName);
+    log("Got a 403 error for package", packageName);
     state.status403Packages.push(packageName);
     return;
   } else if (resp.status === 404) {
@@ -472,13 +497,10 @@ async function fetchCountForSinglePackage(packageName, throttledFetch) {
     // all-the-package-names release but then get unpublished from the registry
     // before this script runs.
     // That's fine - we just leave it out from our data and move on.
-    console.log("Got 404 for (presumably unpublished) package", packageName);
+    log("Got 404 for (presumably unpublished) package", packageName);
     return;
   } else if (resp.status !== 200) {
-    console.error(
-      new Date(),
-      `Got unexpected ${resp.status} when trying to get ${packageName}`,
-    );
+    log(`Got unexpected ${resp.status} when trying to get ${packageName}`);
     state.singlePackages.push(packageName);
     recordUnexpectedError();
     return;
@@ -504,10 +526,10 @@ await git("add", counts_path);
 await git("add", STATE_PATH);
 await gitCommitAndPush(`Fetched download counts for some packages`);
 
-console.log("Committed and pushed latest counts file");
+log("Committed and pushed latest counts file");
 
 if (gotRateLimited) {
-  console.error(
+  log(
     "Ran to completion - but along the way we got rate limited with 429s.",
     "That should never happen!",
   );
