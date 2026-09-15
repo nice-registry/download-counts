@@ -33,9 +33,9 @@ function logVerbose(...args) {
  * The version number we'll use on npm for the release we're currently building.
  */
 function getVersion() {
-  // We do one release per month, which should start building on the 1st of
-  // the month, and use data from whatever the latest all-the-package-names
-  // release is when the build starts.
+  // We do one release per 2 months, which should start building on the 1st of
+  // the odd-numbered month, and use data from whatever the latest
+  // all-the-package-names release is when the build starts.
   // Version number format is 2.YYYYMMDD
   // Reasons for this:
   // * Major version number of 2 distinguishes these builds from ones built
@@ -50,7 +50,9 @@ function getVersion() {
   //   end to keep npm happy.
   const today = new Date();
   const yyyy = today.getUTCFullYear();
-  const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
+  let monthNumber = today.getUTCMonth() + 1;
+  if (monthNumber % 2 === 0) monthNumber--;
+  const mm = String(monthNumber).padStart(2, "0");
   const dd = "01";
   return `2.${yyyy}${mm}${dd}.0`;
 }
@@ -244,11 +246,11 @@ const counts = {};
 // past requests for the numbers simply go unanswered - e.g. see
 // https://github.com/orgs/community/discussions/152515#discussioncomment-13094301
 //
-// This throttling means a full build of a new release will take almost a
+// This throttling means a full build of a new release will take over a
 // month. This sucks, but so be it; it can't be helped (except by distributing
 // the work over multiple IPs to dodge the rate limit).
 //
-// Note that the rate limit USED to be much more lenient; before 15th November,
+// Note that the rate limit USED to be much more lenient; before 15th November 2025,
 // we could do a full build in under a day, and used to therefore do two builds
 // per month. The API also used to include Retry-After headers with 429 rate
 // limiting responses. But both of these things have changed, meaning the API
