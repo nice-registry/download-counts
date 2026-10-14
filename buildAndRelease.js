@@ -216,8 +216,6 @@ if (
   process.exit();
 }
 
-
-
 // Scenario 2: We still need to hit the npm API to fetch download counts for
 //             some packages.
 
