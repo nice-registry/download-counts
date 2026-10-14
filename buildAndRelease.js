@@ -183,28 +183,20 @@ if (!fs.existsSync(STATE_PATH)) {
 // we need to do next:
 const state = JSON.parse(fs.readFileSync(STATE_PATH).toString());
 
-// SCENARIO 5: We've already completed the entire build process and published
+// SCENARIO 4: We've already completed the entire build process and published
 //             a new version to npm.
 if (state.published) {
   log(version, "was already published to npm. Nothing left to do!");
   process.exit();
 }
 
-// SCENARIO 4: We have completed the build process but not yet published it to
-//             npm; it's time to publish.
-if (fs.existsSync(pkg.main)) {
-  await promisify(execFile)("npm", ["publish"]);
-  state.published = true;
-  fs.writeFileSync(STATE_PATH, JSON.stringify(state));
-  await git("add", STATE_PATH);
-  await gitCommitAndPush(`Version ${version} is now published to npm`);
-  log("Published version", version, "to npm successfully. Hooray!");
-  process.exit();
-}
-
 // Scenario 3: We've fetched download counts for every package, but haven't
 //             consolidated them into a single file ready to publish to npm.
-//             So we do that and commit it.
+//             So we do that and then publish to npm.
+//             We do NOT commit the consolidated counts.json file because it
+//             will be over 100MB, which means we can't push it to GitHub
+//             (unless we use LFS, which we don't want to because it is not
+//             free).
 if (
   state.singlePackages.length == 0 &&
   state.unscopedPackageBatches.length == 0
@@ -214,9 +206,13 @@ if (
     Object.assign(counts, JSON.parse(fs.readFileSync(`counts${i}.json`)));
   }
   fs.writeFileSync(pkg.main, JSON.stringify(counts));
-  await git("add", pkg.main);
-  await gitCommitAndPush(`Wrote ${pkg.main}`);
-  log(`${pkg.main} created. Next run should publish it to npm.`);
+  log(`${pkg.main} created.`);
+  await promisify(execFile)("npm", ["publish"]);
+  state.published = true;
+  fs.writeFileSync(STATE_PATH, JSON.stringify(state));
+  await git("add", STATE_PATH);
+  await gitCommitAndPush(`Version ${version} is now published to npm`);
+  log("Published version", version, "to npm successfully. Hooray!");
   process.exit();
 }
 
